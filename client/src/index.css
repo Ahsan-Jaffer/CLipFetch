@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.28);
+  color: inherit;
+}
+
+/* Moving background */
+.aurora-bg {
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.22), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.22), transparent 30%),
+    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.18), transparent 32%);
+  filter: blur(42px);
+  animation: auroraMove 18s ease-in-out infinite alternate;
+}
+
+.aurora-bg-light {
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.22), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(167, 139, 250, 0.25), transparent 30%),
+    radial-gradient(circle at 50% 80%, rgba(147, 197, 253, 0.22), transparent 32%);
+  filter: blur(46px);
+  animation: auroraMove 18s ease-in-out infinite alternate;
+}
+
+.moving-grid {
+  animation: gridMove 22s linear infinite;
+}
+
+.float-blob-slow {
+  animation: floatBlobSlow 9s ease-in-out infinite;
+}
+
+.float-blob-medium {
+  animation: floatBlobMedium 11s ease-in-out infinite;
+}
+
+.rotate-ring {
+  animation: rotateRing 26s linear infinite;
+}
+
+/* Premium hover utilities */
+.premium-card {
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-4px);
+}
+
+.premium-button {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease;
+}
+
+.premium-button:hover {
+  transform: translateY(-2px) scale(1.01);
+  filter: brightness(1.06);
+}
+
+.premium-button:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.premium-input {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.premium-input:hover {
+  transform: translateY(-2px);
+}
+
+.nav-link-premium {
+  position: relative;
+}
+
+.nav-link-premium::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #8b5cf6);
+  transition: width 220ms ease;
+}
+
+.nav-link-premium:hover::after {
+  width: 100%;
+}
+
+.shine-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  transform: skewX(-18deg);
+  transition: left 650ms ease;
+}
+
+.shine-card:hover::before {
+  left: 140%;
+}
+
+@keyframes auroraMove {
+  0% {
+    transform: translate3d(-2%, -2%, 0) rotate(0deg) scale(1);
+  }
+  35% {
+    transform: translate3d(4%, -3%, 0) rotate(8deg) scale(1.08);
+  }
+  70% {
+    transform: translate3d(-3%, 4%, 0) rotate(-6deg) scale(1.04);
+  }
+  100% {
+    transform: translate3d(3%, 3%, 0) rotate(10deg) scale(1.12);
+  }
+}
+
+@keyframes gridMove {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 72px 72px;
+  }
+}
+
+@keyframes floatBlobSlow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(30px, -24px, 0) scale(1.08);
+  }
+}
+
+@keyframes floatBlobMedium {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-26px, 28px, 0) scale(1.12);
+  }
+}
+
+@keyframes rotateRing {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
