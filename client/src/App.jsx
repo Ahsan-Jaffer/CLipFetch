@@ -6,6 +6,8 @@ import Navbar from "./components/Navbar";
 import ProcessingCard from "./components/ProcessingCard";
 import ProcessSteps from "./components/ProcessSteps";
 import ResultCard from "./components/ResultCard";
+import { analyzeVideoUrl } from "./utils/api";
+
 
 export default function App() {
   const [theme, setTheme] = useState(() => {
@@ -16,7 +18,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasResult, setHasResult] = useState(false);
-
+  const [videoData, setVideoData] = useState(null);
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -28,28 +30,45 @@ export default function App() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
-  const handleAnalyze = () => {
-    if (!url.trim()) {
-      setError("Please paste a video link first.");
-      return;
+  const handleAnalyze = async () => {
+  if (!url.trim()) {
+    setError("Please paste a video link first.");
+    return;
+  }
+
+  setError("");
+  setHasResult(false);
+  setVideoData(null);
+  setIsProcessing(true);
+
+  try {
+    const result = await analyzeVideoUrl(url);
+
+    if (!result.success) {
+      throw new Error(result.message || "Could not analyze this URL.");
     }
 
-    setError("");
-    setHasResult(false);
-    setIsProcessing(true);
+    setVideoData(result.data);
+    setHasResult(true);
 
     setTimeout(() => {
-      setIsProcessing(false);
-      setHasResult(true);
+      document.getElementById("result-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 120);
+  } catch (err) {
+    const message =
+      err.response?.data?.message ||
+      err.message ||
+      "Something went wrong. Please try again.";
 
-      setTimeout(() => {
-        document.getElementById("result-section")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 120);
-    }, 1800);
-  };
+    setError(message);
+    setHasResult(false);
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const pageClasses = useMemo(() => {
     return isDark
@@ -82,7 +101,7 @@ export default function App() {
               )}
 
               {!isProcessing && hasResult && (
-                <ResultCard key="result" isDark={isDark} />
+                <ResultCard key="result" isDark={isDark} video={videoData} />
               )}
             </AnimatePresence>
 
