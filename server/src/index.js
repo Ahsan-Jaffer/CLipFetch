@@ -5,9 +5,10 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 
-const analyzeRoutes = require("./routes/analyzeRoutes.js");
-const errorHandler = require("./middleware/errorHandler.js");
-const notFoundHandler = require("./middleware/notFoundHandler.js");
+const analyzeRoutes = require("./routes/analyzeRoutes");
+const downloadRoutes = require("./routes/downloadRoutes");
+const errorHandler = require("./middleware/errorHandler");
+const notFoundHandler = require("./middleware/notFoundHandler");
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/analyze", analyzeRoutes);
+app.use("/api/download", downloadRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

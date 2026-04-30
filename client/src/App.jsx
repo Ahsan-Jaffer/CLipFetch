@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import DownloadToast from "./components/DownloadToast";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
@@ -24,6 +25,13 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [videoData, setVideoData] = useState(null);
+
+  const [downloadStatus, setDownloadStatus] = useState({
+    visible: false,
+    status: "idle",
+    fileLabel: "",
+    message: "",
+  });
 
   const latestRequestIdRef = useRef(0);
 
@@ -102,6 +110,15 @@ export default function App() {
     }
   };
 
+  const handleCloseDownloadToast = () => {
+    setDownloadStatus({
+      visible: false,
+      status: "idle",
+      fileLabel: "",
+      message: "",
+    });
+  };
+
   const pageClasses = useMemo(() => {
     return isDark ? "bg-[#060816] text-white" : "bg-[#f5f7fb] text-slate-900";
   }, [isDark]);
@@ -113,6 +130,12 @@ export default function App() {
       <BackgroundFx isDark={isDark} />
 
       <div className="relative z-10">
+        <DownloadToast
+          isDark={isDark}
+          downloadStatus={downloadStatus}
+          onClose={handleCloseDownloadToast}
+        />
+
         <Navbar isDark={isDark} onToggleTheme={handleToggleTheme} />
 
         <Hero
@@ -140,6 +163,7 @@ export default function App() {
                   key={`result-${videoData.originalUrl || videoData.title}`}
                   isDark={isDark}
                   video={videoData}
+                  onDownloadStatusChange={setDownloadStatus}
                 />
               )}
             </AnimatePresence>

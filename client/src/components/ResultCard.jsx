@@ -1,10 +1,30 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock3, Play } from "lucide-react";
 import { useState } from "react";
+import { downloadVideoFormat } from "../utils/api";
 import FormatOption from "./FormatOption";
 
-export default function ResultCard({ isDark, video }) {
+function saveBlobAsFile(blob, fileName) {
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = blobUrl;
+  link.download = fileName || "clipfetch-download.mp4";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.URL.revokeObjectURL(blobUrl);
+}
+
+export default function ResultCard({
+  isDark,
+  video,
+  onDownloadStatusChange,
+}) {
   const [activeTab, setActiveTab] = useState("video");
+  const [downloadingFormatId, setDownloadingFormatId] = useState(null);
+  const [isDownloadLocked, setIsDownloadLocked] = useState(false);
 
   if (!video) return null;
 
@@ -20,8 +40,75 @@ export default function ResultCard({ isDark, video }) {
   const titleClass = isDark ? "text-white" : "text-slate-900";
   const textClass = isDark ? "text-slate-400" : "text-slate-500";
 
-  const handleDownload = () => {
-    alert("Download feature will be connected in backend step.");
+  const updateToast = (payload) => {
+    if (typeof onDownloadStatusChange === "function") {
+      onDownloadStatusChange(payload);
+    }
+  };
+
+  const handleDownload = async (option) => {
+    if (option.type !== "video") {
+      updateToast({
+        visible: true,
+        status: "error",
+        fileLabel: "MP3 Audio",
+        message: "MP3 download will be added in the next step.",
+      });
+      return;
+    }
+
+    if (isDownloadLocked) {
+      return;
+    }
+
+    const fileLabel = `${option.quality} ${option.format} · ${video.title}`;
+
+    setIsDownloadLocked(true);
+    setDownloadingFormatId(option.id);
+
+    updateToast({
+      visible: true,
+      status: "downloading",
+      fileLabel,
+      message: "",
+    });
+
+    try {
+      const result = await downloadVideoFormat({
+        url: video.originalUrl,
+        formatId: option.formatId || option.id,
+        type: option.type,
+        title: video.title,
+      });
+
+      saveBlobAsFile(result.blob, result.fileName);
+
+      updateToast({
+        visible: true,
+        status: "success",
+        fileLabel,
+        message: "Download started. Check your browser downloads.",
+      });
+
+      setTimeout(() => {
+        updateToast({
+          visible: false,
+          status: "idle",
+          fileLabel: "",
+          message: "",
+        });
+      }, 4200);
+    } catch (error) {
+      updateToast({
+        visible: true,
+        status: "error",
+        fileLabel,
+        message: error.message || "Download failed. Please try again.",
+      });
+    } finally {
+      setDownloadingFormatId(null);
+      setIsDownloadLocked(false);
+    }
   };
 
   return (
@@ -81,8 +168,8 @@ export default function ResultCard({ isDark, video }) {
           </h2>
 
           <p className={`mt-2 text-sm leading-6 ${textClass}`}>
-            Choose your preferred format below. Backend API is connected with
-            safe mock response data.
+            Choose a video format below. A download status card will appear at
+            the top while the file is being prepared.
           </p>
 
           <div
@@ -136,6 +223,10 @@ export default function ResultCard({ isDark, video }) {
                     option={option}
                     index={index}
                     onDownload={handleDownload}
+                    isDownloading={downloadingFormatId === option.id}
+                    isDownloadLocked={
+                      isDownloadLocked && downloadingFormatId !== option.id
+                    }
                   />
                 ))}
               </motion.div>
