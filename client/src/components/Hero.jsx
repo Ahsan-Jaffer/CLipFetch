@@ -4,7 +4,14 @@ import UrlInput from "./UrlInput";
 
 const platformBadges = ["YouTube", "Instagram", "TikTok", "Facebook"];
 
-export default function Hero({ isDark, url, setUrl, onAnalyze, error }) {
+export default function Hero({
+  isDark,
+  url,
+  setUrl,
+  onAnalyze,
+  error,
+  isProcessing,
+}) {
   const subText = isDark ? "text-slate-300" : "text-slate-600";
   const softText = isDark ? "text-slate-400" : "text-slate-500";
   const badgeClass = isDark
@@ -70,6 +77,7 @@ export default function Hero({ isDark, url, setUrl, onAnalyze, error }) {
           setUrl={setUrl}
           onAnalyze={onAnalyze}
           error={error}
+          isProcessing={isProcessing}
         />
 
         <motion.div
@@ -79,8 +87,16 @@ export default function Hero({ isDark, url, setUrl, onAnalyze, error }) {
           className="mt-5 flex flex-wrap items-center justify-center gap-3"
         >
           <TrustChip isDark={isDark} icon={<Zap size={15} />} text="Fast" />
-          <TrustChip isDark={isDark} icon={<ShieldCheck size={15} />} text="No signup" />
-          <TrustChip isDark={isDark} icon={<Music2 size={15} />} text="MP4 / MP3" />
+          <TrustChip
+            isDark={isDark}
+            icon={<ShieldCheck size={15} />}
+            text="No signup"
+          />
+          <TrustChip
+            isDark={isDark}
+            icon={<Music2 size={15} />}
+            text="MP4 / MP3"
+          />
         </motion.div>
 
         <p className={`mt-4 text-sm ${softText}`}>

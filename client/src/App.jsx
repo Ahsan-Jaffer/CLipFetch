@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
@@ -7,6 +7,12 @@ import ProcessingCard from "./components/ProcessingCard";
 import ProcessSteps from "./components/ProcessSteps";
 import ResultCard from "./components/ResultCard";
 import { analyzeVideoUrl } from "./utils/api";
+
+const MIN_PROCESSING_TIME = 850;
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default function App() {
   const [theme, setTheme] = useState(() => {
@@ -18,6 +24,8 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [videoData, setVideoData] = useState(null);
+
+  const latestRequestIdRef = useRef(0);
 
   const isDark = theme === "dark";
 
@@ -31,18 +39,40 @@ export default function App() {
   };
 
   const handleAnalyze = async () => {
+    if (isProcessing) {
+      return;
+    }
+
+    const cleanUrl = url.trim();
+
+    if (!cleanUrl) {
+      setError("Please paste a video link first.");
+      return;
+    }
+
+    const requestId = Date.now();
+    latestRequestIdRef.current = requestId;
+
+    setError("");
+    setHasResult(false);
+    setVideoData(null);
+    setIsProcessing(true);
+
+    const startedAt = Date.now();
+
     try {
-      if (!url.trim()) {
-        setError("Please paste a video link first.");
-        return;
+      const result = await analyzeVideoUrl(cleanUrl);
+
+      const elapsed = Date.now() - startedAt;
+      const remainingTime = Math.max(MIN_PROCESSING_TIME - elapsed, 0);
+
+      if (remainingTime > 0) {
+        await wait(remainingTime);
       }
 
-      setError("");
-      setHasResult(false);
-      setVideoData(null);
-      setIsProcessing(true);
-
-      const result = await analyzeVideoUrl(url);
+      if (latestRequestIdRef.current !== requestId) {
+        return;
+      }
 
       if (!result?.success || !result?.data) {
         throw new Error(result?.message || "Could not analyze this video link.");
@@ -58,11 +88,17 @@ export default function App() {
         });
       }, 120);
     } catch (error) {
+      if (latestRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setHasResult(false);
       setVideoData(null);
       setError(error.message || "Something went wrong. Please try again.");
     } finally {
-      setIsProcessing(false);
+      if (latestRequestIdRef.current === requestId) {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -85,20 +121,23 @@ export default function App() {
           setUrl={setUrl}
           onAnalyze={handleAnalyze}
           error={error}
+          isProcessing={isProcessing}
         />
 
         <ProcessSteps isDark={isDark} />
 
         <section id="result-section" className="px-5 pb-16 md:px-8">
           <div className="mx-auto max-w-5xl">
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {isProcessing && (
                 <ProcessingCard key="processing" isDark={isDark} />
               )}
+            </AnimatePresence>
 
-              {!isProcessing && hasResult && (
+            <AnimatePresence>
+              {!isProcessing && hasResult && videoData && (
                 <ResultCard
-                  key="result"
+                  key={`result-${videoData.originalUrl || videoData.title}`}
                   isDark={isDark}
                   video={videoData}
                 />
