@@ -1,5 +1,3 @@
-const AppError = require("../utils/AppError");
-const asyncHandler = require("../utils/asyncHandler");
 const detectPlatform = require("../utils/detectPlatform");
 
 const mockFormats = [
@@ -48,31 +46,36 @@ const mockThumbnails = {
     "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80",
 };
 
-const analyzeUrl = asyncHandler(async (req, res) => {
+async function analyzeUrl(req, res) {
   try {
     const { url } = req.body;
 
     if (!url || typeof url !== "string" || !url.trim()) {
-      throw new AppError("Please provide a video URL.", 400);
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a video URL.",
+      });
     }
 
-    const { platform, normalizedUrl } = detectPlatform(url);
+    const { isValidUrl, normalizedUrl, platform } = detectPlatform(url);
 
-    if (!normalizedUrl) {
-      throw new AppError("Invalid URL format. Please enter a valid video link.", 400);
+    if (!isValidUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid URL format. Please enter a valid video link.",
+      });
     }
 
     if (!platform) {
-      throw new AppError(
-        "Unsupported platform. Please use YouTube, Facebook, Instagram, or TikTok.",
-        400,
-        {
-          supportedPlatforms: ["YouTube", "Facebook", "Instagram", "TikTok"],
-        }
-      );
+      return res.status(400).json({
+        success: false,
+        message:
+          "Unsupported platform. Please use YouTube, Facebook, Instagram, or TikTok.",
+        supportedPlatforms: ["YouTube", "Facebook", "Instagram", "TikTok"],
+      });
     }
 
-    const responseData = {
+    const videoData = {
       originalUrl: normalizedUrl,
       title: `${platform} Sample Video Preview`,
       platform,
@@ -85,16 +88,17 @@ const analyzeUrl = asyncHandler(async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Video link analyzed successfully.",
-      data: responseData,
+      data: videoData,
     });
   } catch (error) {
-    if (error.isOperational) {
-      throw error;
-    }
+    console.error("Analyze URL Error:", error);
 
-    throw new AppError("Failed to analyze the video URL.", 500);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to analyze the video URL. Please try again later.",
+    });
   }
-});
+}
 
 module.exports = {
   analyzeUrl,

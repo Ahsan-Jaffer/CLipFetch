@@ -12,10 +12,27 @@ const api = axios.create({
 });
 
 export async function analyzeVideoUrl(url) {
+  try {
+    const response = await api.post("/api/analyze", { url });
+    return response.data;
+  } catch (error) {
+    let message = "Something went wrong. Please try again.";
 
-    
-  const response = await api.post("/api/analyze", { url });
-  return response.data;
+    if (error.response) {
+      message =
+        error.response.data?.message ||
+        "The server could not process this request.";
+    } else if (error.request) {
+      message =
+        "Unable to connect to the server. Please make sure the backend is running.";
+    } else if (error.message) {
+      message = error.message;
+    }
+
+    throw new Error(message, {
+      cause: error,
+    });
+  }
 }
 
 export default api;

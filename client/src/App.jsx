@@ -8,7 +8,6 @@ import ProcessSteps from "./components/ProcessSteps";
 import ResultCard from "./components/ResultCard";
 import { analyzeVideoUrl } from "./utils/api";
 
-
 export default function App() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("clipfetch-theme") || "dark";
@@ -19,6 +18,7 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasResult, setHasResult] = useState(false);
   const [videoData, setVideoData] = useState(null);
+
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -31,53 +31,49 @@ export default function App() {
   };
 
   const handleAnalyze = async () => {
-  if (!url.trim()) {
-    setError("Please paste a video link first.");
-    return;
-  }
+    try {
+      if (!url.trim()) {
+        setError("Please paste a video link first.");
+        return;
+      }
 
-  setError("");
-  setHasResult(false);
-  setVideoData(null);
-  setIsProcessing(true);
+      setError("");
+      setHasResult(false);
+      setVideoData(null);
+      setIsProcessing(true);
 
-  try {
-    const result = await analyzeVideoUrl(url);
+      const result = await analyzeVideoUrl(url);
 
-    if (!result.success) {
-      throw new Error(result.message || "Could not analyze this URL.");
+      if (!result?.success || !result?.data) {
+        throw new Error(result?.message || "Could not analyze this video link.");
+      }
+
+      setVideoData(result.data);
+      setHasResult(true);
+
+      setTimeout(() => {
+        document.getElementById("result-section")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 120);
+    } catch (error) {
+      setHasResult(false);
+      setVideoData(null);
+      setError(error.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
-
-    setVideoData(result.data);
-    setHasResult(true);
-
-    setTimeout(() => {
-      document.getElementById("result-section")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 120);
-  } catch (err) {
-    const message =
-      err.response?.data?.message ||
-      err.message ||
-      "Something went wrong. Please try again.";
-
-    setError(message);
-    setHasResult(false);
-  } finally {
-    setIsProcessing(false);
-  }
-};
+  };
 
   const pageClasses = useMemo(() => {
-    return isDark
-      ? "bg-[#060816] text-white"
-      : "bg-[#f5f7fb] text-slate-900";
+    return isDark ? "bg-[#060816] text-white" : "bg-[#f5f7fb] text-slate-900";
   }, [isDark]);
 
   return (
-    <main className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${pageClasses}`}>
+    <main
+      className={`relative min-h-screen overflow-hidden transition-colors duration-500 ${pageClasses}`}
+    >
       <BackgroundFx isDark={isDark} />
 
       <div className="relative z-10">
@@ -101,7 +97,11 @@ export default function App() {
               )}
 
               {!isProcessing && hasResult && (
-                <ResultCard key="result" isDark={isDark} video={videoData} />
+                <ResultCard
+                  key="result"
+                  isDark={isDark}
+                  video={videoData}
+                />
               )}
             </AnimatePresence>
 
@@ -135,9 +135,7 @@ function BackgroundFx({ isDark }) {
 
       <div
         className={`absolute inset-0 ${
-          isDark
-            ? "bg-[#060816]/82"
-            : "bg-[#f5f7fb]/78"
+          isDark ? "bg-[#060816]/82" : "bg-[#f5f7fb]/78"
         }`}
       />
 

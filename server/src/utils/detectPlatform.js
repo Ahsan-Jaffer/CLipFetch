@@ -41,28 +41,31 @@ function detectPlatform(inputUrl) {
 
     if (!normalizedUrl) {
       return {
-        platform: null,
+        isValidUrl: false,
         normalizedUrl: null,
+        platform: null,
       };
     }
 
     const parsedUrl = new URL(normalizedUrl);
     const host = parsedUrl.hostname.toLowerCase();
 
-    const matchedPlatform = supportedPlatforms.find((item) =>
-      item.hosts.some(
+    const matchedPlatform = supportedPlatforms.find((platformItem) =>
+      platformItem.hosts.some(
         (allowedHost) => host === allowedHost || host.endsWith(`.${allowedHost}`)
       )
     );
 
     return {
-      platform: matchedPlatform ? matchedPlatform.name : null,
+      isValidUrl: true,
       normalizedUrl,
+      platform: matchedPlatform ? matchedPlatform.name : null,
     };
   } catch (error) {
     return {
-      platform: null,
+      isValidUrl: false,
       normalizedUrl: null,
+      platform: null,
     };
   }
 }
