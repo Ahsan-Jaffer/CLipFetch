@@ -4,6 +4,10 @@ const detectPlatform = require("../utils/detectPlatform");
 const { normalizeMetadata } = require("../utils/formatMetadata");
 const { getVideoMetadata } = require("../services/metadataService");
 
+const maxVideoDurationSeconds = Number(
+  process.env.MAX_VIDEO_DURATION_SECONDS || 7200
+);
+
 const mockFormats = [
   {
     id: 1,
@@ -33,13 +37,44 @@ const mockFormats = [
     formatId: "mock-480",
   },
   {
-    id: 4,
-    quality: "MP3",
-    format: "Audio",
-    label: "Audio",
-    size: "9.8 MB",
+    id: "mp3-320",
+    quality: "320kbps",
+    format: "MP3",
+    label: "Best Quality",
+    size: "Depends on duration",
     type: "audio",
-    formatId: "mock-audio",
+    formatId: "bestaudio",
+    audioBitrate: 320,
+  },
+  {
+    id: "mp3-256",
+    quality: "256kbps",
+    format: "MP3",
+    label: "High Quality",
+    size: "Depends on duration",
+    type: "audio",
+    formatId: "bestaudio",
+    audioBitrate: 256,
+  },
+  {
+    id: "mp3-192",
+    quality: "192kbps",
+    format: "MP3",
+    label: "Balanced",
+    size: "Depends on duration",
+    type: "audio",
+    formatId: "bestaudio",
+    audioBitrate: 192,
+  },
+  {
+    id: "mp3-128",
+    quality: "128kbps",
+    format: "MP3",
+    label: "Smaller File",
+    size: "Depends on duration",
+    type: "audio",
+    formatId: "bestaudio",
+    audioBitrate: 128,
   },
 ];
 
@@ -64,6 +99,25 @@ function getMockVideoData(platform, normalizedUrl) {
     formats: mockFormats,
     isMockData: true,
   };
+}
+
+function validateVideoDuration(rawMetadata) {
+  const duration = Number(rawMetadata?.duration || 0);
+
+  if (!duration || Number.isNaN(duration)) {
+    return;
+  }
+
+  if (duration > maxVideoDurationSeconds) {
+    throw new AppError(
+      "This video is too long. Please use a video under 2 hours.",
+      400,
+      {
+        maxDurationSeconds: maxVideoDurationSeconds,
+        videoDurationSeconds: Math.floor(duration),
+      }
+    );
+  }
 }
 
 const analyzeUrl = asyncHandler(async (req, res) => {
@@ -100,6 +154,9 @@ const analyzeUrl = asyncHandler(async (req, res) => {
     videoData = getMockVideoData(platform, normalizedUrl);
   } else {
     const rawMetadata = await getVideoMetadata(normalizedUrl);
+
+    validateVideoDuration(rawMetadata);
+
     videoData = normalizeMetadata(rawMetadata, platform, normalizedUrl);
   }
 
