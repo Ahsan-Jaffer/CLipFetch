@@ -18,8 +18,7 @@ export default function FormatOption({
   const titleClass = isDark ? "text-white" : "text-slate-900";
   const textClass = isDark ? "text-slate-400" : "text-slate-500";
 
-  const isAudio = option.type === "audio";
-  const isDisabled = isDownloading || isAudio || isDownloadLocked;
+  const isDisabled = isDownloading || isDownloadLocked;
 
   return (
     <motion.div
@@ -45,7 +44,13 @@ export default function FormatOption({
               {option.quality} {option.format}
             </h4>
 
-            <span className="rounded-full bg-blue-500/12 px-2 py-0.5 text-[11px] font-bold text-blue-500">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                option.type === "audio"
+                  ? "bg-violet-500/12 text-violet-500"
+                  : "bg-blue-500/12 text-blue-500"
+              }`}
+            >
               {option.label}
             </span>
           </div>
@@ -57,16 +62,12 @@ export default function FormatOption({
       <button
         onClick={() => onDownload(option)}
         disabled={isDisabled}
-        title={
-          isAudio
-            ? "MP3 download will be added in the next step."
-            : isDownloadLocked
-            ? "Another download is already being prepared."
-            : ""
-        }
+        title={isDownloadLocked ? "Another download is already being prepared." : ""}
         className={`premium-button inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(79,70,229,0.28)] ${
-          isAudio || isDownloadLocked
+          isDownloadLocked
             ? "cursor-not-allowed bg-slate-500 opacity-60"
+            : option.type === "audio"
+            ? "bg-gradient-to-r from-violet-500 to-fuchsia-600"
             : "bg-gradient-to-r from-blue-500 to-violet-600"
         } disabled:cursor-not-allowed disabled:opacity-70`}
       >
@@ -78,7 +79,7 @@ export default function FormatOption({
         ) : (
           <>
             <Download size={16} />
-            {isAudio ? "Coming Soon" : "Download"}
+            Download
           </>
         )}
       </button>

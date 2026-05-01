@@ -9,7 +9,7 @@ function saveBlobAsFile(blob, fileName) {
   const link = document.createElement("a");
 
   link.href = blobUrl;
-  link.download = fileName || "clipfetch-download.mp4";
+  link.download = fileName || "clipfetch-download";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -17,11 +17,7 @@ function saveBlobAsFile(blob, fileName) {
   window.URL.revokeObjectURL(blobUrl);
 }
 
-export default function ResultCard({
-  isDark,
-  video,
-  onDownloadStatusChange,
-}) {
+export default function ResultCard({ isDark, video, onDownloadStatusChange }) {
   const [activeTab, setActiveTab] = useState("video");
   const [downloadingFormatId, setDownloadingFormatId] = useState(null);
   const [isDownloadLocked, setIsDownloadLocked] = useState(false);
@@ -47,21 +43,14 @@ export default function ResultCard({
   };
 
   const handleDownload = async (option) => {
-    if (option.type !== "video") {
-      updateToast({
-        visible: true,
-        status: "error",
-        fileLabel: "MP3 Audio",
-        message: "MP3 download will be added in the next step.",
-      });
-      return;
-    }
-
     if (isDownloadLocked) {
       return;
     }
 
-    const fileLabel = `${option.quality} ${option.format} · ${video.title}`;
+    const fileLabel =
+      option.type === "audio"
+        ? `${option.quality} MP3 · ${video.title}`
+        : `${option.quality} ${option.format} · ${video.title}`;
 
     setIsDownloadLocked(true);
     setDownloadingFormatId(option.id);
@@ -69,6 +58,7 @@ export default function ResultCard({
     updateToast({
       visible: true,
       status: "downloading",
+      type: option.type,
       fileLabel,
       message: "",
     });
@@ -79,6 +69,7 @@ export default function ResultCard({
         formatId: option.formatId || option.id,
         type: option.type,
         title: video.title,
+        audioBitrate: option.audioBitrate,
       });
 
       saveBlobAsFile(result.blob, result.fileName);
@@ -86,6 +77,7 @@ export default function ResultCard({
       updateToast({
         visible: true,
         status: "success",
+        type: option.type,
         fileLabel,
         message: "Download started. Check your browser downloads.",
       });
@@ -94,6 +86,7 @@ export default function ResultCard({
         updateToast({
           visible: false,
           status: "idle",
+          type: "video",
           fileLabel: "",
           message: "",
         });
@@ -102,6 +95,7 @@ export default function ResultCard({
       updateToast({
         visible: true,
         status: "error",
+        type: option.type,
         fileLabel,
         message: error.message || "Download failed. Please try again.",
       });
@@ -168,8 +162,8 @@ export default function ResultCard({
           </h2>
 
           <p className={`mt-2 text-sm leading-6 ${textClass}`}>
-            Choose a video format below. A download status card will appear at
-            the top while the file is being prepared.
+            Choose a video quality or convert the audio to MP3. Higher MP3
+            bitrate creates a larger file and depends on source quality.
           </p>
 
           <div
@@ -196,7 +190,7 @@ export default function ResultCard({
               onClick={() => setActiveTab("audio")}
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
                 activeTab === "audio"
-                  ? "bg-gradient-to-r from-blue-500 to-violet-600 text-white"
+                  ? "bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white"
                   : isDark
                   ? "text-slate-400 hover:text-white"
                   : "text-slate-600 hover:text-slate-900"

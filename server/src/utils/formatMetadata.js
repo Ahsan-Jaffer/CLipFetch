@@ -4,16 +4,12 @@ function formatDuration(totalSeconds) {
   }
 
   const secondsNumber = Math.floor(Number(totalSeconds));
-
   const hours = Math.floor(secondsNumber / 3600);
   const minutes = Math.floor((secondsNumber % 3600) / 60);
   const seconds = secondsNumber % 60;
 
   if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-      2,
-      "0"
-    )}`;
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
@@ -56,18 +52,11 @@ function getBestThumbnail(rawMetadata) {
 }
 
 function getLabelByHeight(height) {
-  if (!height) {
-    return "Video";
-  }
-
-  if (height >= 1080) {
-    return "FHD";
-  }
-
-  if (height >= 720) {
-    return "HD";
-  }
-
+  if (!height) return "Video";
+  if (height >= 2160) return "4K";
+  if (height >= 1440) return "2K";
+  if (height >= 1080) return "FHD";
+  if (height >= 720) return "HD";
   return "SD";
 }
 
@@ -106,7 +95,7 @@ function getVideoFormats(rawFormats = []) {
   }
 
   return Array.from(uniqueByHeight.values())
-    .slice(0, 4)
+    .slice(0, 5)
     .map((format, index) => {
       const height = Number(format.height || 0);
       const extension = String(format.ext || "mp4").toUpperCase();
@@ -126,28 +115,57 @@ function getVideoFormats(rawFormats = []) {
     });
 }
 
-function getAudioFormat(rawFormats = []) {
-  const audioCandidates = rawFormats
-    .filter((format) => {
-      const hasAudio = format.acodec && format.acodec !== "none";
-      const hasNoVideo = !format.vcodec || format.vcodec === "none";
-      return hasAudio && hasNoVideo;
-    })
-    .sort((a, b) => Number(b.abr || b.tbr || 0) - Number(a.abr || a.tbr || 0));
-
-  const bestAudio = audioCandidates[0];
-
-  return {
-    id: bestAudio?.format_id ? String(bestAudio.format_id) : "bestaudio",
-    quality: "MP3",
-    format: "Audio",
-    label: bestAudio?.abr ? `${Math.round(bestAudio.abr)}kbps` : "Audio",
-    size: formatFileSize(bestAudio?.filesize || bestAudio?.filesize_approx),
-    type: "audio",
-    formatId: bestAudio?.format_id ? String(bestAudio.format_id) : "bestaudio",
-    hasAudio: true,
-    hasVideo: false,
-  };
+function getAudioQualityOptions() {
+  return [
+    {
+      id: "mp3-320",
+      quality: "320kbps",
+      format: "MP3",
+      label: "Best Quality",
+      size: "Depends on duration",
+      type: "audio",
+      formatId: "bestaudio",
+      audioBitrate: 320,
+      hasAudio: true,
+      hasVideo: false,
+    },
+    {
+      id: "mp3-256",
+      quality: "256kbps",
+      format: "MP3",
+      label: "High Quality",
+      size: "Depends on duration",
+      type: "audio",
+      formatId: "bestaudio",
+      audioBitrate: 256,
+      hasAudio: true,
+      hasVideo: false,
+    },
+    {
+      id: "mp3-192",
+      quality: "192kbps",
+      format: "MP3",
+      label: "Balanced",
+      size: "Depends on duration",
+      type: "audio",
+      formatId: "bestaudio",
+      audioBitrate: 192,
+      hasAudio: true,
+      hasVideo: false,
+    },
+    {
+      id: "mp3-128",
+      quality: "128kbps",
+      format: "MP3",
+      label: "Smaller File",
+      size: "Depends on duration",
+      type: "audio",
+      formatId: "bestaudio",
+      audioBitrate: 128,
+      hasAudio: true,
+      hasVideo: false,
+    },
+  ];
 }
 
 function normalizeMetadata(rawMetadata, platform, originalUrl) {
@@ -173,7 +191,7 @@ function normalizeMetadata(rawMetadata, platform, originalUrl) {
     ];
   }
 
-  formats.push(getAudioFormat(rawFormats));
+  formats.push(...getAudioQualityOptions());
 
   return {
     originalUrl,

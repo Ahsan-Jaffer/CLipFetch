@@ -8,33 +8,40 @@ server/node_modules/
 .env.local
 .env.development
 .env.production
-server/.env
 client/.env
+server/.env
 
 # Build files
 dist/
 build/
 client/dist/
 client/build/
+server/dist/
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
+*.log
 
-# OS files
+# OS / Editor
 .DS_Store
 Thumbs.db
-
-# Editor files
 .vscode/
 .idea/
 
-# Temporary files
-tmp/
-temp/
-
-# Media/temp downloads
+# Generated downloads / temp files
 downloads/
+server/downloads/
+client/downloads/
 uploads/
+temp/
+tmp/
+
+# Media files generated during testing
+*.mp4
+*.mp3
+*.webm
+*.mkv
+*.m4a
+*.wav

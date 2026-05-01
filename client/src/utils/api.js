@@ -35,7 +35,13 @@ export async function analyzeVideoUrl(url) {
   }
 }
 
-export async function downloadVideoFormat({ url, formatId, type, title }) {
+export async function downloadVideoFormat({
+  url,
+  formatId,
+  type,
+  title,
+  audioBitrate,
+}) {
   try {
     const response = await api.post(
       "/api/download",
@@ -44,18 +50,21 @@ export async function downloadVideoFormat({ url, formatId, type, title }) {
         formatId,
         type,
         title,
+        audioBitrate,
       },
       {
         responseType: "blob",
-        timeout: 180000,
+        timeout: 240000,
       }
     );
 
     const contentDisposition = response.headers["content-disposition"];
-    let fileName = "clipfetch-download.mp4";
+    let fileName = type === "audio" ? "clipfetch-audio.mp3" : "clipfetch-video.mp4";
 
     if (contentDisposition) {
-      const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+      const fileNameMatch =
+        contentDisposition.match(/filename\*=UTF-8''([^;]+)/i) ||
+        contentDisposition.match(/filename="?([^"]+)"?/i);
 
       if (fileNameMatch?.[1]) {
         fileName = decodeURIComponent(fileNameMatch[1]);

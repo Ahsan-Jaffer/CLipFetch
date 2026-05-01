@@ -3,24 +3,26 @@ import {
   CheckCircle2,
   Download,
   Loader2,
+  Music2,
+  Video,
   X,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-const downloadPhases = [
+const videoPhases = [
   {
-    title: "Preparing download",
-    description: "Checking the selected quality and file format.",
+    title: "Preparing video download",
+    description: "Checking the selected quality and format.",
     progress: 22,
   },
   {
     title: "Fetching video stream",
-    description: "Downloading the selected video stream from the source.",
+    description: "Downloading the selected video stream.",
     progress: 52,
   },
   {
-    title: "Packaging file",
+    title: "Packaging video file",
     description: "Preparing the final video file for your browser.",
     progress: 78,
   },
@@ -31,12 +33,38 @@ const downloadPhases = [
   },
 ];
 
+const audioPhases = [
+  {
+    title: "Preparing audio download",
+    description: "Checking the selected MP3 quality.",
+    progress: 20,
+  },
+  {
+    title: "Extracting audio stream",
+    description: "Fetching the best available audio stream.",
+    progress: 48,
+  },
+  {
+    title: "Converting to MP3",
+    description: "Creating your selected MP3 quality.",
+    progress: 76,
+  },
+  {
+    title: "Starting browser download",
+    description: "Almost done. Your MP3 download will start shortly.",
+    progress: 92,
+  },
+];
+
 export default function DownloadToast({ isDark, downloadStatus, onClose }) {
   const [phaseIndex, setPhaseIndex] = useState(0);
 
   const isVisible = downloadStatus?.visible;
   const status = downloadStatus?.status || "idle";
-  const fileLabel = downloadStatus?.fileLabel || "Selected video";
+  const type = downloadStatus?.type || "video";
+  const fileLabel = downloadStatus?.fileLabel || "Selected file";
+
+  const phases = type === "audio" ? audioPhases : videoPhases;
 
   useEffect(() => {
     if (!isVisible || status !== "downloading") {
@@ -46,7 +74,7 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
 
     const interval = setInterval(() => {
       setPhaseIndex((current) => {
-        if (current >= downloadPhases.length - 1) {
+        if (current >= phases.length - 1) {
           return current;
         }
 
@@ -55,9 +83,9 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
     }, 2200);
 
     return () => clearInterval(interval);
-  }, [isVisible, status]);
+  }, [isVisible, status, phases.length]);
 
-  const activePhase = downloadPhases[phaseIndex];
+  const activePhase = phases[phaseIndex];
 
   const toastContent = useMemo(() => {
     if (status === "success") {
@@ -76,7 +104,7 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
         title: "Download failed",
         description:
           downloadStatus?.message ||
-          "This video may be restricted or unavailable in this format.",
+          "This file may be restricted or unavailable in this format.",
         progress: 100,
         tone: "error",
       };
@@ -102,6 +130,8 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
       ? "bg-emerald-500/12 text-emerald-500"
       : toastContent.tone === "error"
       ? "bg-rose-500/12 text-rose-500"
+      : type === "audio"
+      ? "bg-violet-500/12 text-violet-500"
       : "bg-blue-500/12 text-blue-500";
 
   const progressClass =
@@ -109,6 +139,8 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
       ? "from-emerald-400 to-emerald-600"
       : toastContent.tone === "error"
       ? "from-rose-400 to-rose-600"
+      : type === "audio"
+      ? "from-violet-400 via-fuchsia-500 to-pink-500"
       : "from-cyan-400 via-blue-500 to-violet-600";
 
   return (
@@ -137,7 +169,9 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
                     <h3 className="text-sm font-black sm:text-base">
                       {toastContent.title}
                     </h3>
-                    <p className={`mt-1 text-xs leading-5 sm:text-sm ${subTextClass}`}>
+                    <p
+                      className={`mt-1 text-xs leading-5 sm:text-sm ${subTextClass}`}
+                    >
                       {toastContent.description}
                     </p>
                   </div>
@@ -156,13 +190,14 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
                 </div>
 
                 <div
-                  className={`mt-3 rounded-2xl px-3 py-2 text-xs font-semibold ${
+                  className={`mt-3 flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold ${
                     isDark
                       ? "bg-white/5 text-slate-300"
                       : "bg-slate-100 text-slate-600"
                   }`}
                 >
-                  {fileLabel}
+                  {type === "audio" ? <Music2 size={14} /> : <Video size={14} />}
+                  <span className="truncate">{fileLabel}</span>
                 </div>
 
                 <div
@@ -178,7 +213,9 @@ export default function DownloadToast({ isDark, downloadStatus, onClose }) {
                 </div>
 
                 {status === "downloading" && (
-                  <div className={`mt-3 flex items-center gap-2 text-xs ${subTextClass}`}>
+                  <div
+                    className={`mt-3 flex items-center gap-2 text-xs ${subTextClass}`}
+                  >
                     <Download size={14} />
                     Please keep this tab open until the browser download starts.
                   </div>

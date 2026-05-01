@@ -2,20 +2,22 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const detectPlatform = require("../utils/detectPlatform");
 const { deleteFileSafe } = require("../utils/fileUtils");
-const { downloadVideoFile } = require("../services/downloadService");
+const {
+  downloadVideoFile,
+  downloadAudioFile,
+} = require("../services/downloadService");
 
 const downloadVideo = asyncHandler(async (req, res) => {
-  const { url, formatId, type, title } = req.body;
+  const { url, formatId, type, title, audioBitrate } = req.body;
 
   if (!url || typeof url !== "string" || !url.trim()) {
     throw new AppError("Please provide a video URL.", 400);
   }
 
-  if (type && type !== "video") {
-    throw new AppError(
-      "Audio/MP3 download will be added in the next step.",
-      400
-    );
+  const downloadType = type || "video";
+
+  if (!["video", "audio"].includes(downloadType)) {
+    throw new AppError("Invalid download type selected.", 400);
   }
 
   const { isValidUrl, normalizedUrl, platform } = detectPlatform(url);
@@ -34,11 +36,18 @@ const downloadVideo = asyncHandler(async (req, res) => {
     );
   }
 
-  const downloadedFile = await downloadVideoFile({
-    url: normalizedUrl,
-    formatId,
-    title,
-  });
+  const downloadedFile =
+    downloadType === "audio"
+      ? await downloadAudioFile({
+          url: normalizedUrl,
+          title,
+          audioBitrate,
+        })
+      : await downloadVideoFile({
+          url: normalizedUrl,
+          formatId,
+          title,
+        });
 
   res.download(downloadedFile.filePath, downloadedFile.fileName, (error) => {
     deleteFileSafe(downloadedFile.filePath);
