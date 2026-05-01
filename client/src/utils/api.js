@@ -5,7 +5,7 @@ const API_BASE_URL =
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,12 +13,22 @@ const api = axios.create({
 
 export async function analyzeVideoUrl(url) {
   try {
-    const response = await api.post("/api/analyze", { url });
+    const response = await api.post(
+      "/api/analyze",
+      { url },
+      {
+        timeout: 130000,
+      }
+    );
+
     return response.data;
   } catch (error) {
     let message = "Something went wrong. Please try again.";
 
-    if (error.response) {
+    if (error.code === "ECONNABORTED") {
+      message =
+        "Analysis is taking too long. This playlist may be large or slow to process.";
+    } else if (error.response) {
       message =
         error.response.data?.message ||
         "The server could not process this request.";
@@ -59,7 +69,8 @@ export async function downloadVideoFormat({
     );
 
     const contentDisposition = response.headers["content-disposition"];
-    let fileName = type === "audio" ? "clipfetch-audio.mp3" : "clipfetch-video.mp4";
+    let fileName =
+      type === "audio" ? "clipfetch-audio.mp3" : "clipfetch-video.mp4";
 
     if (contentDisposition) {
       const fileNameMatch =

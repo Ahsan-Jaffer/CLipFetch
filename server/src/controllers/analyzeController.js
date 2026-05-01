@@ -2,7 +2,12 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const detectPlatform = require("../utils/detectPlatform");
 const { normalizeMetadata } = require("../utils/formatMetadata");
+const {
+  isLikelyPlaylistUrl,
+  normalizePlaylistMetadata,
+} = require("../utils/formatPlaylist");
 const { getVideoMetadata } = require("../services/metadataService");
+const { getPlaylistMetadata } = require("../services/playlistService");
 
 const maxVideoDurationSeconds = Number(
   process.env.MAX_VIDEO_DURATION_SECONDS || 7200
@@ -101,6 +106,44 @@ function getMockVideoData(platform, normalizedUrl) {
   };
 }
 
+function getMockPlaylistData(normalizedUrl) {
+  return {
+    playlistTitle: "Sample Playlist",
+    originalUrl: normalizedUrl,
+    videoCount: 3,
+    isPlaylist: true,
+    items: [
+      {
+        id: "sample-1",
+        index: 1,
+        title: "Sample Playlist Video 1",
+        url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        duration: "03:42",
+        thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+        uploader: "Sample Channel",
+      },
+      {
+        id: "sample-2",
+        index: 2,
+        title: "Sample Playlist Video 2",
+        url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        duration: "03:42",
+        thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+        uploader: "Sample Channel",
+      },
+      {
+        id: "sample-3",
+        index: 3,
+        title: "Sample Playlist Video 3",
+        url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        duration: "03:42",
+        thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+        uploader: "Sample Channel",
+      },
+    ],
+  };
+}
+
 function validateVideoDuration(rawMetadata) {
   const duration = Number(rawMetadata?.duration || 0);
 
@@ -147,21 +190,38 @@ const analyzeUrl = asyncHandler(async (req, res) => {
   }
 
   const useMockMetadata = process.env.USE_MOCK_METADATA === "true";
+  const isPlaylistUrl = isLikelyPlaylistUrl(normalizedUrl);
 
-  let videoData;
+  if (isPlaylistUrl) {
+    const playlistData = useMockMetadata
+      ? getMockPlaylistData(normalizedUrl)
+      : normalizePlaylistMetadata(
+          await getPlaylistMetadata(normalizedUrl),
+          normalizedUrl
+        );
 
-  if (useMockMetadata) {
-    videoData = getMockVideoData(platform, normalizedUrl);
-  } else {
-    const rawMetadata = await getVideoMetadata(normalizedUrl);
-
-    validateVideoDuration(rawMetadata);
-
-    videoData = normalizeMetadata(rawMetadata, platform, normalizedUrl);
+    return res.status(200).json({
+      success: true,
+      type: "playlist",
+      message: "Playlist analyzed successfully.",
+      data: playlistData,
+    });
   }
+
+  const videoData = useMockMetadata
+    ? getMockVideoData(platform, normalizedUrl)
+    : normalizeMetadata(
+        await getVideoMetadata(normalizedUrl).then((rawMetadata) => {
+          validateVideoDuration(rawMetadata);
+          return rawMetadata;
+        }),
+        platform,
+        normalizedUrl
+      );
 
   return res.status(200).json({
     success: true,
+    type: "video",
     message: "Video link analyzed successfully.",
     data: videoData,
   });

@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DownloadToast from "./components/DownloadToast";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
+import PlaylistCard from "./components/PlaylistCard";
 import ProcessingCard from "./components/ProcessingCard";
 import ProcessSteps from "./components/ProcessSteps";
 import ResultCard from "./components/ResultCard";
@@ -23,12 +25,15 @@ export default function App() {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasResult, setHasResult] = useState(false);
+  const [resultType, setResultType] = useState(null);
   const [videoData, setVideoData] = useState(null);
+  const [playlistData, setPlaylistData] = useState(null);
+  const [activePlaylistData, setActivePlaylistData] = useState(null);
 
   const [downloadStatus, setDownloadStatus] = useState({
     visible: false,
     status: "idle",
+    type: "video",
     fileLabel: "",
     message: "",
   });
@@ -46,12 +51,12 @@ export default function App() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
-  const handleAnalyze = async () => {
+  const analyzeUrlAndSetResult = async (inputUrl, options = {}) => {
     if (isProcessing) {
       return;
     }
 
-    const cleanUrl = url.trim();
+    const cleanUrl = inputUrl.trim();
 
     if (!cleanUrl) {
       setError("Please paste a video link first.");
@@ -62,9 +67,17 @@ export default function App() {
     latestRequestIdRef.current = requestId;
 
     setError("");
-    setHasResult(false);
-    setVideoData(null);
     setIsProcessing(true);
+
+    if (!options.keepPlaylistContext) {
+      setResultType(null);
+      setVideoData(null);
+      setPlaylistData(null);
+      setActivePlaylistData(null);
+    } else {
+      setResultType(null);
+      setVideoData(null);
+    }
 
     const startedAt = Date.now();
 
@@ -83,11 +96,18 @@ export default function App() {
       }
 
       if (!result?.success || !result?.data) {
-        throw new Error(result?.message || "Could not analyze this video link.");
+        throw new Error(result?.message || "Could not analyze this link.");
       }
 
-      setVideoData(result.data);
-      setHasResult(true);
+      if (result.type === "playlist") {
+        setPlaylistData(result.data);
+        setActivePlaylistData(result.data);
+        setVideoData(null);
+        setResultType("playlist");
+      } else {
+        setVideoData(result.data);
+        setResultType("video");
+      }
 
       setTimeout(() => {
         document.getElementById("result-section")?.scrollIntoView({
@@ -100,7 +120,7 @@ export default function App() {
         return;
       }
 
-      setHasResult(false);
+      setResultType(null);
       setVideoData(null);
       setError(error.message || "Something went wrong. Please try again.");
     } finally {
@@ -110,10 +130,38 @@ export default function App() {
     }
   };
 
+  const handleAnalyze = () => {
+    analyzeUrlAndSetResult(url);
+  };
+
+  const handleSelectPlaylistVideo = (item) => {
+    analyzeUrlAndSetResult(item.url, {
+      keepPlaylistContext: true,
+    });
+  };
+
+  const handleBackToPlaylist = () => {
+    if (!activePlaylistData) {
+      return;
+    }
+
+    setVideoData(null);
+    setResultType("playlist");
+    setPlaylistData(activePlaylistData);
+
+    setTimeout(() => {
+      document.getElementById("result-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+  };
+
   const handleCloseDownloadToast = () => {
     setDownloadStatus({
       visible: false,
       status: "idle",
+      type: "video",
       fileLabel: "",
       message: "",
     });
@@ -122,6 +170,8 @@ export default function App() {
   const pageClasses = useMemo(() => {
     return isDark ? "bg-[#060816] text-white" : "bg-[#f5f7fb] text-slate-900";
   }, [isDark]);
+
+  const hasAnyResult = Boolean(resultType);
 
   return (
     <main
@@ -157,18 +207,41 @@ export default function App() {
               )}
             </AnimatePresence>
 
-            <AnimatePresence>
-              {!isProcessing && hasResult && videoData && (
+            {!isProcessing && resultType === "playlist" && playlistData && (
+              <PlaylistCard
+                isDark={isDark}
+                playlist={playlistData}
+                onSelectVideo={handleSelectPlaylistVideo}
+                isProcessing={isProcessing}
+              />
+            )}
+
+            {!isProcessing && resultType === "video" && videoData && (
+              <>
+                {activePlaylistData && (
+                  <button
+                    onClick={handleBackToPlaylist}
+                    className={`premium-button mt-8 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
+                      isDark
+                        ? "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                        : "border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                    }`}
+                  >
+                    <ArrowLeft size={16} />
+                    Back to playlist
+                  </button>
+                )}
+
                 <ResultCard
                   key={`result-${videoData.originalUrl || videoData.title}`}
                   isDark={isDark}
                   video={videoData}
                   onDownloadStatusChange={setDownloadStatus}
                 />
-              )}
-            </AnimatePresence>
+              </>
+            )}
 
-            {!isProcessing && !hasResult && (
+            {!isProcessing && !hasAnyResult && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -179,7 +252,7 @@ export default function App() {
                     : "border-slate-200 bg-white/75 text-slate-500 shadow-[0_20px_60px_rgba(15,23,42,0.06)]"
                 }`}
               >
-                Paste a link above to preview available download formats.
+                Paste a video or playlist link above to preview download options.
               </motion.div>
             )}
           </div>
