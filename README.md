@@ -1,10 +1,10 @@
 # ClipFetch
 
-ClipFetch is a modern MERN stack video downloader and converter web app.
+ClipFetch is a modern MERN stack video downloader, audio converter, and playlist analyzer web application.
 
-It allows users to paste a public video link, analyze the media, view available download options, download video files, and convert audio to MP3 in different quality levels.
+It allows users to paste a public video or playlist link, analyze the media, view available formats, download videos, convert audio to MP3, and selectively download playlist videos one by one.
 
-The project is built with a clean SaaS-style user interface, dark/light theme support, animated interactions, and a practical Node.js backend powered by `yt-dlp` and `ffmpeg`.
+The project is built with a clean SaaS-style UI, dark/light theme support, animated interactions, and a practical Node.js backend powered by `yt-dlp` and `ffmpeg`.
 
 ---
 
@@ -26,16 +26,26 @@ ClipFetch is currently in active development.
 - Multiple MP3 quality options
 - Download progress toast
 - Professional backend error handling
+- 2-hour video duration safety limit
+- Temporary download file cleanup service
+- Separate analyze/download rate limits
+- Playlist analysis support
+- Playlist video listing
+- Playlist search/filter UI
+- One-by-one playlist video download flow
+- YouTube playlist/show URL handling
 
-### In Progress / Planned
+### Planned
 
-- Better download progress tracking
+- Better real-time download progress tracking
 - Download history
 - Batch downloads
+- Playlist pagination for very large playlists
+- Optional download queue system
 - User accounts
 - Premium limits
 - Deployment setup
-- Production-level queue system
+- Production-level background workers
 
 ---
 
@@ -49,21 +59,25 @@ ClipFetch is currently in active development.
 - Animated aurora background
 - Premium hover effects
 - Simple paste-and-analyze flow
-- Download result preview card
+- Video result preview card
+- Playlist result interface
+- Animated processing and download states
 
 ### Video Analysis
 
 - Paste a public video URL
 - Detect supported platform
 - Fetch real metadata
-- Show title, thumbnail, duration, and formats
+- Show title, thumbnail, duration, uploader, and available formats
+- Reject videos longer than the configured safety limit
 
 ### Video Download
 
 - Download available video formats
-- Supports multiple quality options when available
+- Supports multiple video quality options when available
 - Browser-based file download
 - Temporary server-side file handling
+- Automatic cleanup for old temporary files
 
 ### MP3 Audio Download
 
@@ -73,7 +87,21 @@ ClipFetch is currently in active development.
   - 256kbps
   - 192kbps
   - 128kbps
-- Audio-specific progress feedback
+- Audio-specific download progress feedback
+- Uses `ffmpeg` for audio conversion
+
+### Playlist Analyzer
+
+- Paste a YouTube playlist or show link
+- Fetch playlist title and video list
+- Show all videos in a clean playlist interface
+- Search videos inside the playlist
+- Select any video from the playlist
+- Prepare and download selected videos one by one
+- Continue using the normal video/audio download flow for selected playlist videos
+
+ClipFetch does not download the full playlist automatically.  
+This keeps the app safer, lighter, and easier to use.
 
 ### User Experience
 
@@ -81,6 +109,7 @@ ClipFetch is currently in active development.
 - Download progress toast
 - Success and error messages
 - One-download-at-a-time behavior
+- Back-to-playlist navigation
 - Clean error handling for unsupported/private/restricted links
 
 ---
@@ -93,6 +122,8 @@ Current platform detection supports:
 - Instagram
 - TikTok
 - Facebook
+
+Playlist support is currently focused on YouTube playlist/show links.
 
 Support depends on what `yt-dlp` can access from the given public URL.
 
@@ -129,6 +160,8 @@ Support depends on what `yt-dlp` can access from the given public URL.
 
 ## How It Works
 
+### Single Video Flow
+
 ```txt
 User pastes video URL
         ↓
@@ -147,3 +180,62 @@ User selects format
 Backend downloads or converts file
         ↓
 Browser starts download
+
+```
+## Project Structure
+
+```
+ClipFetch/
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── DownloadToast.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── FormatOption.jsx
+│   │   │   ├── Hero.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── PlaylistCard.jsx
+│   │   │   ├── ProcessingCard.jsx
+│   │   │   ├── ProcessSteps.jsx
+│   │   │   ├── ResultCard.jsx
+│   │   │   ├── ThemeToggle.jsx
+│   │   │   └── UrlInput.jsx
+│   │   ├── utils/
+│   │   │   └── api.js
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   └── package.json
+│
+├── server/
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── analyzeController.js
+│   │   │   └── downloadController.js
+│   │   ├── middleware/
+│   │   │   ├── errorHandler.js
+│   │   │   ├── notFoundHandler.js
+│   │   │   └── rateLimiters.js
+│   │   ├── routes/
+│   │   │   ├── analyzeRoutes.js
+│   │   │   └── downloadRoutes.js
+│   │   ├── services/
+│   │   │   ├── cleanupService.js
+│   │   │   ├── downloadService.js
+│   │   │   ├── metadataService.js
+│   │   │   └── playlistService.js
+│   │   ├── utils/
+│   │   │   ├── AppError.js
+│   │   │   ├── asyncHandler.js
+│   │   │   ├── detectPlatform.js
+│   │   │   ├── fileUtils.js
+│   │   │   ├── formatMetadata.js
+│   │   │   └── formatPlaylist.js
+│   │   └── index.js
+│   └── package.json
+│
+├── README.md
+├── .gitignore
+├── package.json
+└── start-dev.bat
+```
